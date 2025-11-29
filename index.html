@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELLBORN // SYSTEM OVERRIDE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00ff41;
+            --secondary: #008F11;
+            --alert: #ff003c;
+            --bg: #030303;
+            --glass: rgba(10, 20, 15, 0.7);
+            --border: rgba(0, 255, 65, 0.3);
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--primary);
+            font-family: 'JetBrains Mono', monospace;
+            overflow: hidden;
+            margin: 0;
+            cursor: crosshair;
+        }
+
+        /* --- UTILS --- */
+        .font-tech { font-family: 'Rajdhani', sans-serif; }
+        .text-xs-xx { font-size: 0.6rem; }
+        
+        /* --- CRT EFFECT --- */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.3));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0.6;
+        }
+        .glow {
+            animation: textGlow 2s infinite alternate;
+        }
+        @keyframes textGlow {
+            0% { text-shadow: 0 0 5px var(--secondary); }
+            100% { text-shadow: 0 0 15px var(--primary), 0 0 5px white; }
+        }
+
+        /* --- BORDERS & CONTAINERS --- */
+        .hud-panel {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            position: relative;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.05);
+        }
+        .hud-panel::before {
+            content: ''; position: absolute; top: -1px; left: -1px; width: 15px; height: 15px;
+            border-top: 2px solid var(--primary); border-left: 2px solid var(--primary);
+        }
+        .hud-panel::after {
+            content: ''; position: absolute; bottom: -1px; right: -1px; width: 15px; height: 15px;
+            border-bottom: 2px solid var(--primary); border-right: 2px solid var(--primary);
+        }
+        
+        /* --- BOOT SEQUENCE --- */
+        #boot-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: black; z-index: 9999;
+            padding: 2rem;
+            display: flex; flex-direction: column; justify-content: flex-start;
+        }
+        .boot-text { color: var(--primary); margin-bottom: 2px; }
+
+        /* --- GLITCH --- */
+        .glitch-wrapper { position: relative; display: inline-block; }
+        .glitch-text::before, .glitch-text::after {
+            content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.8;
+        }
+        .glitch-text::before { color: #0ff; z-index: -1; animation: glitch-anim-1 2s infinite linear alternate-reverse; }
+        .glitch-text::after { color: #f0f; z-index: -2; animation: glitch-anim-2 2s infinite linear alternate-reverse; }
+        
+        @keyframes glitch-anim-1 {
+            0% { clip-path: inset(20% 0 80% 0); transform: translate(-2px, 2px); }
+            20% { clip-path: inset(60% 0 10% 0); transform: translate(2px, -1px); }
+            100% { clip-path: inset(10% 0 50% 0); transform: translate(-1px, 1px); }
+        }
+        @keyframes glitch-anim-2 {
+            0% { clip-path: inset(10% 0 60% 0); transform: translate(2px, -2px); }
+            100% { clip-path: inset(30% 0 20% 0); transform: translate(-2px, 1px); }
+        }
+
+        /* --- SCROLLBAR --- */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: var(--secondary); }
+        ::-webkit-scrollbar-track { background: #000; }
+
+        /* --- ANIMATIONS --- */
+        .blink { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+        
+        .matrix-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.1;
+        }
+    </style>
+</head>
+<body class="bg-black h-screen w-screen overflow-hidden">
+
+    <!-- AUDIO UI (Fake) -->
+    <div class="fixed top-5 right-5 z-50 flex gap-2">
+        <div class="h-4 w-1 bg-green-500 animate-pulse"></div>
+        <div class="h-4 w-1 bg-green-500 animate-pulse" style="animation-delay: 0.1s"></div>
+        <div class="h-4 w-1 bg-green-500 animate-pulse" style="animation-delay: 0.2s"></div>
+        <div class="h-4 w-1 bg-green-500 animate-pulse" style="animation-delay: 0.3s"></div>
+    </div>
+
+    <!-- BOOT SCREEN -->
+    <div id="boot-screen">
+        <div class="boot-text">HELLBORN_BIOS v4.0.21 Released 11/29/25</div>
+        <div class="boot-text">CPU 0: HELLBORN NEURAL ENGINE @ 99.9 GHz</div>
+        <div class="boot-text"> </div>
+        <div class="boot-text">Checking NVRAM.. OK</div>
+        <div class="boot-text">Initializing Modules........ OK</div>
+        <div class="boot-text">Loading Kernel (Hellborn.sys)...</div>
+        <div id="boot-log" class="text-gray-500 mt-4"></div>
+    </div>
+
+    <!-- MAIN DASHBOARD -->
+    <div id="dashboard" class="hidden opacity-0 transition-opacity duration-1000 w-full h-full p-2 md:p-4 grid grid-cols-12 grid-rows-12 gap-4">
+        
+        <!-- HEADER -->
+        <header class="col-span-12 row-span-1 flex justify-between items-end border-b border-green-900 pb-2">
+            <div>
+                <h1 class="text-4xl font-black font-tech tracking-tighter glitch-wrapper">
+                    <span class="glitch-text" data-text="HELLBORN.EDITOR">HELLBORN.EDITOR</span>
+                </h1>
+                <div class="text-xs tracking-[0.5em] text-green-700">SYSTEM V/S BOYS_GIRLS</div>
+            </div>
+            <div class="text-right font-mono text-xs hidden md:block">
+                <div>SECURE CONNECTION ESTABLISHED</div>
+                <div class="text-green-500">ENCRYPTION: AES-256 [ACTIVE]</div>
+            </div>
+        </header>
+
+        <!-- LEFT COLUMN: TARGET LIST -->
+        <div class="col-span-3 row-span-11 flex flex-col gap-4">
+            <!-- Stats -->
+            <div class="hud-panel p-4 flex justify-between items-center">
+                <div>
+                    <div class="text-xs text-gray-400">TARGETS</div>
+                    <div class="text-2xl font-bold font-tech">132</div>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-400">VULNERABLE</div>
+                    <div class="text-2xl font-bold font-tech text-red-500">100%</div>
+                </div>
+            </div>
+            
+            <!-- Member List -->
+            <div class="hud-panel flex-1 overflow-hidden flex flex-col">
+                <div class="bg-green-900/20 p-2 text-xs font-bold border-b border-green-900 flex justify-between">
+                    <span><i class="fas fa-users"></i> DETECTED ENTITIES</span>
+                    <span class="animate-pulse text-red-500">● LIVE</span>
+                </div>
+                <div class="overflow-y-auto p-2 space-y-1" id="member-list">
+                    <!-- JS Injected -->
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER COLUMN: MAP & TERMINAL -->
+        <div class="col-span-6 row-span-11 flex flex-col gap-4">
+            
+            <!-- 3D Globe / Map Container -->
+            <div class="hud-panel flex-[2] relative overflow-hidden bg-black flex items-center justify-center">
+                <div class="absolute top-2 left-2 z-10">
+                    <div class="text-xs text-green-500 border border-green-800 px-2 bg-black/50">GEOLOCATION TRACKER</div>
+                    <div class="text-xs-xx text-gray-500 mt-1">LAT: <span id="lat-val">00.00</span> // LON: <span id="lon-val">00.00</span></div>
+                </div>
+                <canvas id="globeCanvas"></canvas>
+                <!-- Crosshair Overlay -->
+                <div class="absolute inset-0 pointer-events-none opacity-30 flex items-center justify-center">
+                    <div class="w-64 h-64 border border-green-500 rounded-full flex items-center justify-center">
+                        <div class="w-1 h-4 bg-green-500 absolute top-0"></div>
+                        <div class="w-1 h-4 bg-green-500 absolute bottom-0"></div>
+                        <div class="w-4 h-1 bg-green-500 absolute left-0"></div>
+                        <div class="w-4 h-1 bg-green-500 absolute right-0"></div>
+                        <div class="w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terminal -->
+            <div class="hud-panel flex-1 bg-black p-4 font-mono text-sm overflow-hidden flex flex-col">
+                <div class="text-gray-500 text-xs mb-2">HELLBORN_TERM [ADMIN ACCESS]</div>
+                <div class="flex-1 overflow-y-auto text-green-400 space-y-1" id="terminal-output">
+                    <div>> Welcome, Administrator.</div>
+                    <div>> System "GIRLS_VS_BOYS" loaded successfully.</div>
+                    <div>> Type 'help' for available commands.</div>
+                </div>
+                <div class="flex items-center mt-2 border-t border-green-900 pt-2">
+                    <span class="text-green-500 mr-2">root@hellborn:~#</span>
+                    <input type="text" id="terminal-input" class="bg-transparent border-none outline-none text-white w-full font-mono" autocomplete="off" autofocus>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: CHAT & INFO -->
+        <div class="col-span-3 row-span-11 flex flex-col gap-4">
+            
+            <!-- Packet Traffic Graph (Fake) -->
+            <div class="hud-panel h-32 p-2 relative overflow-hidden">
+                <div class="text-xs text-gray-400 mb-1">DATA INTERCEPT_</div>
+                <canvas id="trafficChart" class="w-full h-full"></canvas>
+            </div>
+
+            <!-- Chat Intercept -->
+            <div class="hud-panel flex-1 flex flex-col overflow-hidden">
+                <div class="bg-green-900/20 p-2 text-xs font-bold border-b border-green-900">
+                    <i class="fas fa-comment-dots"></i> MESSAGE_LOG
+                </div>
+                <div class="flex-1 overflow-y-auto p-3 space-y-3" id="chat-feed">
+                    <!-- JS Injected -->
+                </div>
+            </div>
+
+            <!-- System Status -->
+            <div class="hud-panel p-4">
+                <div class="flex justify-between text-xs mb-2">
+                    <span>CPU LOAD</span>
+                    <span id="cpu-val">12%</span>
+                </div>
+                <div class="w-full bg-gray-900 h-1 mb-4">
+                    <div class="bg-green-500 h-full w-[12%]" id="cpu-bar"></div>
+                </div>
+                
+                <div class="flex justify-between text-xs mb-2">
+                    <span>RAM USAGE</span>
+                    <span id="ram-val">42%</span>
+                </div>
+                <div class="w-full bg-gray-900 h-1">
+                    <div class="bg-green-500 h-full w-[42%]" id="ram-bar"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="scanlines"></div>
+
+    <script>
+        // --- BOOT SEQUENCE LOGIC ---
+        const bootScreen = document.getElementById('boot-screen');
+        const bootLog = document.getElementById('boot-log');
+        const dashboard = document.getElementById('dashboard');
+        
+        const bootMessages = [
+            "Mounting file system...",
+            "Loading target database 'GIRL_VS_BOYS'...",
+            "Bypassing firewalls...",
+            "Decrypting user tokens...",
+            "Connecting to satellite uplink...",
+            "Hellborn.editor signature verified.",
+            "Starting interface..."
+        ];
+
+        let msgIdx = 0;
+        function typeBootMsg() {
+            if(msgIdx < bootMessages.length) {
+                const div = document.createElement('div');
+                div.className = "boot-text";
+                div.innerText = `> ${bootMessages[msgIdx]}`;
+                bootLog.appendChild(div);
+                msgIdx++;
+                setTimeout(typeBootMsg, Math.random() * 500 + 200);
+            } else {
+                setTimeout(() => {
+                    bootScreen.style.display = 'none';
+                    dashboard.classList.remove('hidden');
+                    setTimeout(() => dashboard.classList.remove('opacity-0'), 50);
+                    initMatrix();
+                }, 800);
+            }
+        }
+        
+        // Start Boot
+        window.onload = typeBootMsg;
+
+        // --- DATA ---
+        const members = [
+            { name: "shaikh_rehan_783", role: "ADMIN", ip: "192.168.1.101" },
+            { name: "hriddan__360", role: "ADMIN", ip: "192.168.1.102" },
+            { name: "your_ayesha_0.0", role: "USER", ip: "10.0.0.45" },
+            { name: "your_sakib__07", role: "USER", ip: "172.16.5.22" },
+            { name: "Yøûr_Rîjûán", role: "USER", ip: "192.168.0.88" },
+            { name: "Sultan Jokhiya 1", role: "MOD", ip: "10.2.4.99" },
+            { name: "Arabian Shaikh", role: "USER", ip: "192.168.8.1" },
+            { name: "Inaya", role: "USER", ip: "10.55.2.1" },
+            { name: "Sahil_pathan0786", role: "USER", ip: "10.0.1.5" },
+            { name: "Sajjad Mondal", role: "USER", ip: "172.20.10.2" },
+            { name: "samim___r___s", role: "USER", ip: "192.168.1.9" },
+            { name: "Samirul", role: "USER", ip: "10.0.0.99" },
+            { name: "itz__sahill", role: "USER", ip: "192.168.4.4" },
+            { name: "__Amin__RX", role: "USER", ip: "10.0.2.15" }
+        ];
+
+        const chatData = [
+            { user: "__Amin__RX", msg: "Heyyyy" },
+            { user: "Mahi", msg: "Ooo", reply: true },
+            { user: "Mahi", msg: "Hmn" },
+            { user: "itz__sahill", msg: "Dm koro to . Vai ." },
+            { user: "Admin", msg: "Ok" },
+            { user: "__Amin__RX", msg: "Hlw" },
+            { user: "Admin", msg: "Kmn acho" },
+            { user: "itz__raj_king", msg: "Call mat karo na" }
+        ];
+
+        // --- POPULATE UI ---
+        const memberList = document.getElementById('member-list');
+        members.forEach(m => {
+            const div = document.createElement('div');
+            div.className = "p-2 border border-transparent hover:border-green-500 hover:bg-green-900/30 cursor-pointer transition text-xs font-mono group";
+            div.innerHTML = `
+                <div class="flex justify-between">
+                    <span class="font-bold text-white group-hover:text-green-400">${m.name}</span>
+                    <span class="text-[10px] text-gray-500">${m.role}</span>
+                </div>
+                <div class="text-[10px] text-gray-600 group-hover:text-green-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                    IP: ${m.ip} // LOC: TRACKING...
+                </div>
+            `;
+            memberList.appendChild(div);
+        });
+
+        const chatFeed = document.getElementById('chat-feed');
+        let chatIdx = 0;
+        function addChat() {
+            if(chatIdx >= chatData.length) chatIdx = 0; // Loop chat
+            const c = chatData[chatIdx];
+            
+            const div = document.createElement('div');
+            div.className = "text-xs border-l-2 border-gray-700 pl-2 py-1 hover:border-green-500 transition-colors";
+            div.innerHTML = `
+                <div class="text-[10px] text-gray-500 mb-0.5">${new Date().toLocaleTimeString()} <span class="text-green-300 font-bold">${c.user}</span></div>
+                <div class="text-gray-300 font-mono">${c.msg}</div>
+            `;
+            chatFeed.prepend(div); // Add to top
+            if(chatFeed.children.length > 20) chatFeed.lastChild.remove();
+            
+            chatIdx++;
+            setTimeout(addChat, Math.random() * 2000 + 1000);
+        }
+        setTimeout(addChat, 2000);
+
+        // --- CANVAS GLOBE (Visual Only) ---
+        const canvas = document.getElementById('globeCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.offsetWidth;
+            canvas.height = canvas.parentElement.offsetHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let angle = 0;
+        function drawGlobe() {
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const r = Math.min(cx, cy) * 0.7;
+            
+            ctx.strokeStyle = '#003300';
+            ctx.lineWidth = 1;
+            
+            // Sphere grid
+            for(let i=0; i<=10; i++) {
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, r, r * (i/10), 0, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // Rotating Latitudes
+            ctx.strokeStyle = '#00ff41';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, r, r * Math.sin(angle), 0, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(cx, cy-r);
+            ctx.lineTo(cx, cy+r);
+            ctx.stroke();
+
+            // Random Dots (Users)
+            if(Math.random() > 0.8) {
+                const rx = cx + (Math.random()-0.5) * r * 1.5;
+                const ry = cy + (Math.random()-0.5) * r * 1.5;
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(rx, ry, 2, 2);
+            }
+
+            angle += 0.02;
+            requestAnimationFrame(drawGlobe);
+        }
+        drawGlobe();
+
+        // --- CANVAS TRAFFIC CHART ---
+        const tCanvas = document.getElementById('trafficChart');
+        const tCtx = tCanvas.getContext('2d');
+        
+        const bars = [];
+        const barCount = 40;
+        for(let i=0; i<barCount; i++) bars.push(Math.random() * 100);
+
+        function drawTraffic() {
+            tCanvas.width = tCanvas.parentElement.offsetWidth;
+            tCanvas.height = tCanvas.parentElement.offsetHeight;
+            
+            tCtx.fillStyle = '#003300';
+            const barW = tCanvas.width / barCount;
+            
+            for(let i=0; i<barCount; i++) {
+                // Shift data
+                if(i < barCount - 1) bars[i] = bars[i+1];
+                else bars[i] = Math.random() * tCanvas.height;
+
+                const h = bars[i];
+                const x = i * barW;
+                const y = tCanvas.height - h;
+                
+                tCtx.fillRect(x, y, barW - 1, h);
+                // Highlight top
+                tCtx.fillStyle = '#00ff41';
+                tCtx.fillRect(x, y, barW - 1, 2);
+                tCtx.fillStyle = '#003300';
+            }
+            requestAnimationFrame(drawTraffic);
+        }
+        drawTraffic();
+
+        // --- TERMINAL LOGIC ---
+        const termInput = document.getElementById('terminal-input');
+        const termOutput = document.getElementById('terminal-output');
+
+        termInput.addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') {
+                const cmd = termInput.value.toLowerCase().trim();
+                printTerm(`root@hellborn:~# ${cmd}`);
+                
+                if(cmd === 'help') {
+                    printTerm(`AVAILABLE COMMANDS:`);
+                    printTerm(`- scan : Run network vulnerability sca
